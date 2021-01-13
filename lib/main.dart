@@ -1,6 +1,10 @@
-import 'package:Ibovespa/src/nav.dart';
+//---- Packages
 import 'package:flutter/material.dart';
 import 'package:simple_splashscreen/simple_splashscreen.dart';
+
+//---- Screens
+import 'package:Ibovespa/src/auth/Login.dart';
+import 'package:Ibovespa/src/nav.dart';
 
 void main() {
   runApp(MaterialApp(
@@ -19,7 +23,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return Simple_splashscreen(
       context: context,
-      gotoWidget: Nav(),
+      gotoWidget: Login(),
       splashscreenWidget: Splash(),
       timerInSeconds: 2,
     );

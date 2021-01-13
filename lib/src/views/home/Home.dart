@@ -121,7 +121,7 @@ class _HomeState extends State<Home> {
                                 ),
                                 onPressed: () {
                                   setState(() {
-                                    ticker["data"]["dy"] = null;
+                                    //ticker["data"]["dy"] = null;
                                     _controllerTicker.clear();
                                   });
                                 },
