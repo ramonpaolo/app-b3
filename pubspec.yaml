@@ -23,6 +23,7 @@ environment:
 dependencies:
   simple_splashscreen: 
   http: 
+  path_provider: 
 
   flutter:
     sdk: flutter

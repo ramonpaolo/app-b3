@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -17,6 +19,39 @@ class _HomeState extends State<Home> {
   TextEditingController _controllerTicker = TextEditingController();
 
   var _snack = GlobalKey<ScaffoldState>();
+
+  Future<File> getDirectory() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return File(directory.path + "/data.json");
+  }
+
+  Future saveData(Map dataStocks) async {
+    final file = await getDirectory();
+    try {
+      final data = await jsonDecode(file.readAsStringSync());
+      List acoes = data["acoes"];
+      acoes.add({
+        "ticker": dataStocks["ticker"],
+        "nome": dataStocks["nome"],
+        "info": dataStocks["info"],
+        "logo": dataStocks["logo"]
+      });
+      data["acoes"] = acoes;
+      print(await data);
+      file.writeAsStringSync(jsonEncode(data));
+    } catch (e) {
+      file.writeAsStringSync(jsonEncode({
+        "acoes": [
+          {
+            "ticker": dataStocks["ticker"],
+            "nome": dataStocks["nome"],
+            "info": dataStocks["info"],
+            "logo": dataStocks["logo"]
+          }
+        ]
+      }));
+    }
+  }
 
   Future getData() async {
     try {
@@ -187,8 +222,10 @@ class _HomeState extends State<Home> {
                                                 Icons.add_box_outlined,
                                                 color: Colors.white,
                                               ),
-                                              onPressed: () {
+                                              onPressed: () async {
                                                 snackBar("Adicionado");
+                                                await saveData(
+                                                    snapshot.data["data"]);
                                               },
                                             )),
                                       ],
@@ -371,8 +408,9 @@ class _HomeState extends State<Home> {
                                         Icons.add_box_outlined,
                                         color: Colors.white,
                                       ),
-                                      onPressed: () {
+                                      onPressed: () async {
                                         snackBar("Adicionado");
+                                        await saveData(ticker["data"]);
                                       },
                                     )),
                               ],
