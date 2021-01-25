@@ -1,16 +1,24 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:Ibovespa/src/template/stock.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 class Home extends StatefulWidget {
+  Home({Key key, this.dataHome}) : super(key: key);
+  final Map dataHome;
   @override
   _HomeState createState() => _HomeState();
 }
 
 class _HomeState extends State<Home> {
   bool _campSearch = false;
+  bool err = false;
+
+  List acoes = [];
+
+  var _snack = GlobalKey<ScaffoldState>();
 
   Map ticker = {
     "data": {"dy": null}
@@ -18,23 +26,21 @@ class _HomeState extends State<Home> {
 
   TextEditingController _controllerTicker = TextEditingController();
 
-  var _snack = GlobalKey<ScaffoldState>();
-
   Future<File> getDirectory() async {
     final directory = await getApplicationDocumentsDirectory();
     return File(directory.path + "/data.json");
   }
 
-  Future saveData(Map dataStocks) async {
+  Future saveData(Map dataHomes) async {
     final file = await getDirectory();
     try {
       final data = await jsonDecode(file.readAsStringSync());
       List acoes = data["acoes"];
       acoes.add({
-        "ticker": dataStocks["ticker"],
-        "nome": dataStocks["nome"],
-        "info": dataStocks["info"],
-        "logo": dataStocks["logo"]
+        "ticker": dataHomes["ticker"],
+        "nome": dataHomes["nome"],
+        "info": dataHomes["info"],
+        "logo": dataHomes["logo"]
       });
       data["acoes"] = acoes;
       print(await data);
@@ -43,10 +49,10 @@ class _HomeState extends State<Home> {
       file.writeAsStringSync(jsonEncode({
         "acoes": [
           {
-            "ticker": dataStocks["ticker"],
-            "nome": dataStocks["nome"],
-            "info": dataStocks["info"],
-            "logo": dataStocks["logo"]
+            "ticker": dataHomes["ticker"],
+            "nome": dataHomes["nome"],
+            "info": dataHomes["info"],
+            "logo": dataHomes["logo"]
           }
         ]
       }));
@@ -54,13 +60,22 @@ class _HomeState extends State<Home> {
   }
 
   Future getData() async {
+    List a = ["taee11", "taee4", "taee3", "itub4", "itsa4", "enbr3"];
     try {
-      http.Response response =
-          await http.get("http://192.168.100.102:3000/?ticker=itsa4");
-      print(await jsonDecode(response.body));
-      return await jsonDecode(response.body);
+      for (var x = 0; x < a.length; x++) {
+        http.Response response =
+            await http.get("http://192.168.100.106:3000/?ticker=${a[x]}");
+        Map resposta = await jsonDecode(response.body);
+        print(resposta);
+        setState(() {
+          acoes.add(resposta);
+        });
+      }
     } catch (e) {
       print(e);
+      setState(() {
+        err = true;
+      });
       return;
     }
   }
@@ -68,7 +83,7 @@ class _HomeState extends State<Home> {
   Future searchTicker() async {
     try {
       http.Response response = await http.get(
-          "http://192.168.100.102:3000/?ticker=${_controllerTicker.text.toLowerCase()}");
+          "http://192.168.100.106:3000/?ticker=${_controllerTicker.text.toLowerCase()}");
       print(await jsonDecode(response.body));
       setState(() {
         ticker = jsonDecode(response.body);
@@ -89,6 +104,12 @@ class _HomeState extends State<Home> {
   }
 
   @override
+  void initState() {
+    getData();
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     return Scaffold(
@@ -98,440 +119,278 @@ class _HomeState extends State<Home> {
             width: size.width,
             height: size.height,
             child: SingleChildScrollView(
-              child: Stack(
-                children: [
-                  Positioned(
-                    top: size.height * 0.06,
-                    left: size.width * 0.02,
-                    child: Container(
-                      decoration: BoxDecoration(
-                          color: Colors.black,
-                          borderRadius: BorderRadius.circular(140)),
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.search,
-                          color: Colors.white,
-                        ),
-                        onPressed: () {
+              child: Column(children: [
+                Divider(
+                  height: size.height * 0.06,
+                ),
+                Padding(
+                  padding: EdgeInsets.only(left: 8, right: 8),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          print("Eae");
                           setState(() {
                             _campSearch = !_campSearch;
                           });
                         },
+                        child: Container(
+                            margin: EdgeInsets.only(right: size.width * 0.02),
+                            width: size.width * 0.12,
+                            height: size.height * 0.06,
+                            decoration: BoxDecoration(
+                                color: Colors.black,
+                                borderRadius: BorderRadius.circular(140)),
+                            child: Icon(
+                              Icons.search,
+                              color: Colors.white,
+                            )),
                       ),
-                    ),
-                  ),
-                  Positioned(
-                    top: size.height * 0.06,
-                    left: size.width * 0.16,
-                    child: AnimatedCrossFade(
-                      firstChild: Container(
-                        width: size.width * 0.83,
-                        decoration: BoxDecoration(
-                            color: Colors.black,
-                            borderRadius: BorderRadius.circular(40)),
-                        child: TextField(
-                          keyboardType: TextInputType.text,
-                          controller: _controllerTicker,
-                          onSubmitted: (c) async {
-                            if (_controllerTicker.text.length >= 5 &&
-                                _controllerTicker.text.length <= 7) {
-                              await searchTicker();
-                            } else if (_controllerTicker.text.length < 5) {
-                              snackBar("Ticker menor que 5 caracteres");
-                            } else if (_controllerTicker.text.length > 7) {
-                              snackBar("Ticker maior que 7 caracteres");
-                            }
-                          },
-                          style: TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold),
-                          decoration: InputDecoration(
-                              contentPadding:
-                                  EdgeInsets.only(left: 20, top: 14),
-                              fillColor: Colors.white,
-                              focusColor: Colors.white,
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  Icons.clear,
-                                  color: Colors.white,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    //ticker["data"]["dy"] = null;
-                                    _controllerTicker.clear();
-                                  });
-                                },
-                              ),
-                              labelStyle:
-                                  TextStyle(color: Colors.white, fontSize: 24),
-                              border: InputBorder.none),
-                        ),
-                      ),
-                      secondChild: Container(
-                          margin: EdgeInsets.only(
-                              left: size.width * 0.3, top: size.height * 0.02),
-                          child: Text("Dólar: R\$5.28 Euro: R\$6.99",
-                              style: TextStyle(
+                      AnimatedCrossFade(
+                        firstChild: Container(
+                          width: size.width * 0.82,
+                          decoration: BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.circular(40)),
+                          child: TextField(
+                            keyboardType: TextInputType.text,
+                            controller: _controllerTicker,
+                            onSubmitted: (c) async {
+                              if (_controllerTicker.text.length >= 5 &&
+                                  _controllerTicker.text.length <= 7) {
+                                await searchTicker();
+                              } else if (_controllerTicker.text.length < 5) {
+                                snackBar("Ticker menor que 5 caracteres");
+                              } else if (_controllerTicker.text.length > 7) {
+                                snackBar("Ticker maior que 7 caracteres");
+                              }
+                            },
+                            style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 16,
-                              ))),
-                      duration: Duration(milliseconds: 700),
-                      crossFadeState: _campSearch
-                          ? CrossFadeState.showFirst
-                          : CrossFadeState.showSecond,
-                    ),
+                                fontWeight: FontWeight.bold),
+                            decoration: InputDecoration(
+                                contentPadding:
+                                    EdgeInsets.only(left: 20, top: 14),
+                                fillColor: Colors.white,
+                                focusColor: Colors.white,
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    Icons.clear,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      ticker["data"]["dy"] = null;
+                                      _controllerTicker.clear();
+                                    });
+                                  },
+                                ),
+                                labelStyle: TextStyle(
+                                    color: Colors.white, fontSize: 24),
+                                border: InputBorder.none),
+                          ),
+                        ),
+                        secondChild: Container(
+                            margin: EdgeInsets.only(
+                                left: size.width * 0.3,
+                                top: size.height * 0.02),
+                            child: Text("Dólar: R\$5.28 Euro: R\$6.99",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ))),
+                        duration: Duration(milliseconds: 700),
+                        crossFadeState: _campSearch
+                            ? CrossFadeState.showFirst
+                            : CrossFadeState.showSecond,
+                      ),
+                    ],
                   ),
-                  ticker["data"]["dy"] == null
-                      ? RefreshIndicator(
-                          onRefresh: getData,
-                          child: FutureBuilder(
-                            future: getData(),
-                            builder: (context, snapshot) {
-                              if (snapshot.hasData) {
-                                return Center(
+                ),
+                ticker["data"]["dy"] == null
+                    ? err == false
+                        ? acoes.length >= 1
+                            ? RefreshIndicator(
+                                onRefresh: getData,
+                                child: Center(
                                     child: Column(
                                   children: [
-                                    Divider(
-                                      height: size.height * 0.16,
-                                    ),
-                                    Stack(
-                                      children: [
-                                        ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(40),
-                                          child: Container(
-                                            width: size.width * 0.8,
-                                            height: size.height * 0.4,
-                                            child: Image.network(
-                                              snapshot.data["data"]["logo"],
-                                              filterQuality: FilterQuality.high,
-                                              fit: BoxFit.cover,
-                                            ),
-                                          ),
-                                        ),
-                                        Container(
-                                            margin: EdgeInsets.only(
-                                              left: size.width * 0.65,
-                                              top: 10,
-                                            ),
-                                            decoration: BoxDecoration(
-                                                color: Colors.black,
-                                                borderRadius:
-                                                    BorderRadius.circular(40)),
-                                            child: IconButton(
-                                              icon: Icon(
-                                                Icons.add_box_outlined,
-                                                color: Colors.white,
-                                              ),
-                                              onPressed: () async {
-                                                snackBar("Adicionado");
-                                                await saveData(
-                                                    snapshot.data["data"]);
-                                              },
-                                            )),
-                                      ],
-                                    ),
-                                    Stack(
-                                      alignment: AlignmentDirectional(0, 1),
-                                      children: [
-                                        Positioned(
-                                          top: size.height * 0.001,
-                                          child: _contructText(
-                                              "${snapshot.data["data"]["nome"]}",
-                                              size),
-                                        ),
-                                        Positioned(
-                                          top: size.height * 0.022,
-                                          child: _contructText(
-                                              "${snapshot.data["data"]["ticker"]}",
-                                              size),
-                                        ),
-                                        Positioned(
-                                          top: size.height * 0.044,
-                                          child: _contructText(
-                                              "Valor cota: R\$${double.parse(snapshot.data["data"]["valor_cota"].toString().replaceFirst(",", ".")).toStringAsFixed(2)}",
-                                              size),
-                                        ),
-                                        Positioned(
-                                            top: size.height * 0.066,
-                                            child: _contructText(
-                                                "DY 12 meses: ${snapshot.data["data"]["dy"]}%.a.a",
-                                                size)),
-                                        Positioned(
-                                          top: size.height * 0.088,
-                                          child: _contructText(
-                                              "Data do pagamento: ${snapshot.data["data"]["ultimo_pagamento"]}",
-                                              size),
-                                        ),
-                                        Positioned(
-                                          top: size.height * 0.11,
-                                          child: _contructText(
-                                              "Preço Min no dia: R\$${snapshot.data["data"]["preco_min_cota_dia"]}",
-                                              size),
-                                        ),
-                                        Positioned(
-                                          top: size.height * 0.132,
-                                          child: _contructText(
-                                              "Preço Max no dia: R\$${snapshot.data["data"]["preco_max_cota_dia"]}",
-                                              size),
-                                        ),
-                                        Positioned(
-                                          top: size.height * 0.155,
-                                          child: _contructText(
-                                              "Oscilação: ${snapshot.data["data"]["oscilacao_cota_dia"]}",
-                                              size),
-                                        ),
-                                        Container(
-                                            width: size.width,
-                                            height: size.height * 0.368,
-                                            child: DraggableScrollableSheet(
-                                              minChildSize: 0.08,
-                                              initialChildSize: 0.08,
-                                              builder:
-                                                  (context, scrollController) {
-                                                return Container(
-                                                  padding: EdgeInsets.only(
-                                                      left: 16,
-                                                      right: 16,
-                                                      bottom: 8),
-                                                  decoration: BoxDecoration(
-                                                      color: Colors.white,
-                                                      borderRadius:
-                                                          BorderRadius.only(
-                                                              topLeft: Radius
-                                                                  .circular(20),
-                                                              topRight: Radius
-                                                                  .circular(
-                                                                      20))),
-                                                  child: SingleChildScrollView(
-                                                    controller:
-                                                        scrollController,
-                                                    child: Column(
+                                    Container(
+                                        width: size.width,
+                                        height: size.height,
+                                        child: ListView.builder(
+                                          itemCount: acoes.length,
+                                          itemBuilder: (context, index) {
+                                            return Container(
+                                                width: size.width * 0.3,
+                                                height: size.height * 0.12,
+                                                child: GestureDetector(
+                                                  onTap: () => Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                          builder: (context) =>
+                                                              Stock(
+                                                                dataStock:
+                                                                    acoes[
+                                                                        index],
+                                                              ))),
+                                                  child: Card(
+                                                    child: Row(
                                                       children: [
-                                                        Container(
-                                                          margin: EdgeInsets.only(
-                                                              top: size.height *
-                                                                  0.008,
-                                                              bottom:
+                                                        ClipRRect(
+                                                          borderRadius:
+                                                              BorderRadius.only(
+                                                                  bottomLeft: Radius
+                                                                      .circular(
+                                                                          3),
+                                                                  topLeft: Radius
+                                                                      .circular(
+                                                                          3)),
+                                                          child: Container(
+                                                              width:
+                                                                  size.width *
+                                                                      0.3,
+                                                              height:
                                                                   size.height *
-                                                                      0.008),
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color: Colors
-                                                                .grey[900],
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        40),
-                                                          ),
-                                                          width:
-                                                              size.width * 0.1,
-                                                          height: size.height *
-                                                              0.012,
+                                                                      0.12,
+                                                              child:
+                                                                  Image.network(
+                                                                acoes[index]
+                                                                        ["data"]
+                                                                    ["logo"],
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                                filterQuality:
+                                                                    FilterQuality
+                                                                        .high,
+                                                              )),
                                                         ),
-                                                        Text(
-                                                          "Sobre a Empresa",
-                                                          style: TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              fontSize: 18),
-                                                        ),
-                                                        Text(
-                                                            "${snapshot.data["data"]["info"]}"),
+                                                        Expanded(
+                                                            child: ListTile(
+                                                                title: Text(acoes[index]["data"]["nome"]
+                                                                            .toString()
+                                                                            .characters
+                                                                            .length <=
+                                                                        15
+                                                                    ? "${acoes[index]["data"]["nome"]}"
+                                                                    : "${acoes[index]["data"]["nome"].toString().characters.getRange(0, 14)}..."),
+                                                                subtitle: Text(acoes[
+                                                                            index]
+                                                                        ["data"]
+                                                                    ["ticker"]),
+                                                                trailing:
+                                                                    Container(
+                                                                        width: size.width *
+                                                                            0.4,
+                                                                        height: size.height *
+                                                                            0.06,
+                                                                        child:
+                                                                            Row(
+                                                                          mainAxisAlignment:
+                                                                              MainAxisAlignment.end,
+                                                                          children: [
+                                                                            acoes[index]["data"]["oscilacao_cota"].toString().characters.first == "-"
+                                                                                ? Icon(
+                                                                                    Icons.arrow_downward,
+                                                                                    color: Colors.red,
+                                                                                  )
+                                                                                : Icon(
+                                                                                    Icons.arrow_upward,
+                                                                                    color: Colors.blue,
+                                                                                  ),
+                                                                            Text("R\$${acoes[index]["data"]["valor_cota"]}")
+                                                                          ],
+                                                                        ))))
                                                       ],
                                                     ),
                                                   ),
-                                                );
-                                              },
-                                            ))
-                                      ],
-                                    ),
+                                                ));
+                                          },
+                                        )),
                                   ],
-                                ));
-                              } else if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return Container(
-                                    margin:
-                                        EdgeInsets.only(top: size.height * 0.5),
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                        backgroundColor: Colors.white,
-                                      ),
-                                    ));
-                              } else {
-                                return Container(
-                                    margin:
-                                        EdgeInsets.only(top: size.height * 0.5),
-                                    child: Center(
-                                        child: Center(
-                                      child: Text(
-                                        "Error",
-                                        style: TextStyle(
-                                            color: Colors.white, fontSize: 24),
-                                      ),
-                                    )));
-                              }
-                            },
-                          ),
-                        )
-                      : Center(
-                          child: Column(
-                          children: [
-                            Divider(
-                              height: size.height * 0.16,
-                            ),
-                            Stack(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(40),
-                                  child: Container(
-                                    width: size.width * 0.8,
-                                    height: size.height * 0.4,
-                                    child: Image.network(
-                                      ticker["data"]["logo"],
-                                      filterQuality: FilterQuality.high,
-                                      fit: BoxFit.cover,
-                                    ),
+                                )))
+                            : Container(
+                                margin: EdgeInsets.only(top: size.height * 0.5),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    backgroundColor: Colors.white,
                                   ),
-                                ),
-                                Container(
-                                    margin: EdgeInsets.only(
-                                      left: size.width * 0.65,
-                                      top: 10,
+                                ))
+                        : Container(
+                            margin: EdgeInsets.only(top: size.height * 0.5),
+                            child: Center(
+                                child: Center(
+                              child: Text(
+                                "Error",
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 24),
+                              ),
+                            )))
+                    : Column(
+                        children: [
+                          Divider(
+                            height: size.height * 0.1,
+                          ),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                                width: size.width * 0.5,
+                                height: size.height * 0.2,
+                                child: Image.network(
+                                  ticker["data"]["logo"],
+                                  fit: BoxFit.cover,
+                                  filterQuality: FilterQuality.high,
+                                )),
+                          ),
+                          Divider(
+                            color: Colors.transparent,
+                          ),
+                          text(ticker["data"]["nome"]
+                                      .toString()
+                                      .characters
+                                      .length <=
+                                  15
+                              ? "${ticker["data"]["nome"]}"
+                              : "${ticker["data"]["nome"].toString().characters.getRange(0, 15)}"),
+                          text("${ticker["data"]["ticker"]}"),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ticker["data"]["oscilacao_cota"]
+                                          .toString()
+                                          .characters
+                                          .first ==
+                                      "-"
+                                  ? Icon(
+                                      Icons.arrow_downward,
+                                      color: Colors.red,
+                                    )
+                                  : Icon(
+                                      Icons.arrow_upward,
+                                      color: Colors.white,
                                     ),
-                                    decoration: BoxDecoration(
-                                        color: Colors.black,
-                                        borderRadius:
-                                            BorderRadius.circular(40)),
-                                    child: IconButton(
-                                      icon: Icon(
-                                        Icons.add_box_outlined,
-                                        color: Colors.white,
-                                      ),
-                                      onPressed: () async {
-                                        snackBar("Adicionado");
-                                        await saveData(ticker["data"]);
-                                      },
-                                    )),
-                              ],
-                            ),
-                            Stack(
-                              alignment: AlignmentDirectional(0, 1),
-                              children: [
-                                Positioned(
-                                  top: size.height * 0.001,
-                                  child: _contructText(
-                                      "${ticker["data"]["nome"]}", size),
-                                ),
-                                Positioned(
-                                  top: size.height * 0.022,
-                                  child: _contructText(
-                                      "${ticker["data"]["ticker"]}", size),
-                                ),
-                                Positioned(
-                                  top: size.height * 0.044,
-                                  child: _contructText(
-                                      "Valor cota: R\$${double.parse(ticker["data"]["valor_cota"].toString().replaceFirst(",", ".")).toStringAsFixed(2)}",
-                                      size),
-                                ),
-                                Positioned(
-                                    top: size.height * 0.066,
-                                    child: _contructText(
-                                        "DY 12 meses: ${ticker["data"]["dy"]}%",
-                                        size)),
-                                Positioned(
-                                  top: size.height * 0.088,
-                                  child: _contructText(
-                                      "Data do pagamento: ${ticker["data"]["ultimo_pagamento"]}",
-                                      size),
-                                ),
-                                Positioned(
-                                  top: size.height * 0.11,
-                                  child: _contructText(
-                                      "Preço Min no dia: R\$${ticker["data"]["preco_min_cota_dia"]}",
-                                      size),
-                                ),
-                                Positioned(
-                                  top: size.height * 0.132,
-                                  child: _contructText(
-                                      "Preço Max no dia: R\$${ticker["data"]["preco_max_cota_dia"]}",
-                                      size),
-                                ),
-                                Positioned(
-                                  top: size.height * 0.155,
-                                  child: _contructText(
-                                      "Oscilação: ${ticker["data"]["oscilacao_cota_dia"]}",
-                                      size),
-                                ),
-                                Container(
-                                    width: size.width,
-                                    height: size.height * 0.368,
-                                    child: DraggableScrollableSheet(
-                                      minChildSize: 0.08,
-                                      initialChildSize: 0.08,
-                                      builder: (context, scrollController) {
-                                        return Container(
-                                          padding: EdgeInsets.only(
-                                              left: 16, right: 16, bottom: 8),
-                                          decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius: BorderRadius.only(
-                                                  topLeft: Radius.circular(20),
-                                                  topRight:
-                                                      Radius.circular(20))),
-                                          child: SingleChildScrollView(
-                                            controller: scrollController,
-                                            child: Column(
-                                              children: [
-                                                Container(
-                                                  margin: EdgeInsets.only(
-                                                      top: size.height * 0.008,
-                                                      bottom:
-                                                          size.height * 0.008),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.grey[900],
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            40),
-                                                  ),
-                                                  width: size.width * 0.1,
-                                                  height: size.height * 0.012,
-                                                ),
-                                                Text(
-                                                  "Sobre a Empresa",
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 18),
-                                                ),
-                                                Text(
-                                                    "${ticker["data"]["info"]}"),
-                                              ],
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ))
-                              ],
-                            ),
-                          ],
-                        ))
-                ],
-              ),
+                              text("R\$${ticker["data"]["valor_cota"]}"),
+                            ],
+                          ),
+                          text(
+                              "Oscilação da cota no dia: ${ticker["data"]["oscilacao_cota"]}"),
+                          text("Divindend Yield: ${ticker["data"]["dy"]}% a.a"),
+                          text(
+                              "Ultimo pagamento: ${ticker["data"]["ultimo_pagamento"]}"),
+                          Divider(
+                            color: Colors.transparent,
+                          ),
+                          text("${ticker["data"]["info"]}"),
+                        ],
+                      ),
+              ]),
             )));
   }
 
-  Widget _contructText(String text, Size size) {
-    return Column(
-      children: [
-        Text(
-          text,
-          style: TextStyle(color: Colors.white, fontSize: 16),
-        ),
-        Divider(
-          height: size.height * 0.01,
-        )
-      ],
+  Widget text(String text) {
+    return Text(
+      text,
+      style: TextStyle(color: Colors.white, fontSize: 16),
     );
   }
 }

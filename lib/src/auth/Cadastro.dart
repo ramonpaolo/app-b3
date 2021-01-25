@@ -1,7 +1,5 @@
-import 'package:Ibovespa/src/auth/ForgotPassword.dart';
 import 'package:Ibovespa/src/auth/Login.dart';
 import 'package:Ibovespa/src/nav.dart';
-import 'package:Ibovespa/src/views/home/Home.dart';
 import 'package:flutter/material.dart';
 
 class Cadastro extends StatefulWidget {

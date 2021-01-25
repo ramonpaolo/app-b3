@@ -4,7 +4,6 @@ import 'package:simple_splashscreen/simple_splashscreen.dart';
 
 //---- Screens
 import 'package:Ibovespa/src/auth/Login.dart';
-import 'package:Ibovespa/src/nav.dart';
 
 void main() {
   runApp(MaterialApp(
