@@ -24,6 +24,8 @@ dependencies:
   simple_splashscreen: 
   http: 
   path_provider: 
+  draw_graph: ^0.0.2
+  flutter_sparkline: ^0.1.0
 
   flutter:
     sdk: flutter

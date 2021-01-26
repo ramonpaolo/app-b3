@@ -1,4 +1,13 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:ui';
+
+import 'package:draw_graph/draw_graph.dart';
+import 'package:draw_graph/models/feature.dart';
+import 'package:draw_graph/widgets/lineGraph.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_sparkline/flutter_sparkline.dart';
+import 'package:path_provider/path_provider.dart';
 
 class Stock extends StatefulWidget {
   Stock({Key key, this.dataStock}) : super(key: key);
@@ -9,6 +18,57 @@ class Stock extends StatefulWidget {
 
 class _StockState extends State<Stock> {
   var _snack = GlobalKey<ScaffoldState>();
+
+  Future<File> getDirectory() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return File(directory.path + "/data.json");
+  }
+
+  Future saveData() async {
+    final file = await getDirectory();
+    try {
+      final data = await jsonDecode(file.readAsStringSync());
+      for (var x = 0; x < data["acoes"].length; x++) {
+        if (data["acoes"][x]["ticker"] == widget.dataStock["data"]["ticker"]) {
+          _snack.currentState.removeCurrentSnackBar();
+          _snack.currentState.showSnackBar(SnackBar(
+            content: Text("Já está na sua carteira"),
+          ));
+          return null;
+        }
+      }
+      List acoes = data["acoes"];
+      acoes.add({
+        "ticker": widget.dataStock["data"]["ticker"],
+        "nome": widget.dataStock["data"]["nome"],
+        "info": widget.dataStock["data"]["info"],
+        "logo": widget.dataStock["data"]["logo"]
+      });
+      data["acoes"] = acoes;
+      print(await data);
+      await file.writeAsStringSync(jsonEncode(data));
+
+      _snack.currentState.removeCurrentSnackBar();
+      _snack.currentState.showSnackBar(SnackBar(
+        content: Text("Adicionado na carteira"),
+      ));
+    } catch (e) {
+      await file.writeAsStringSync(jsonEncode({
+        "acoes": [
+          {
+            "ticker": widget.dataStock["data"]["ticker"],
+            "nome": widget.dataStock["data"]["nome"],
+            "info": widget.dataStock["data"]["info"],
+            "logo": widget.dataStock["data"]["logo"]
+          }
+        ]
+      }));
+      _snack.currentState.removeCurrentSnackBar();
+      _snack.currentState.showSnackBar(SnackBar(
+        content: Text("Adicionado na carteira"),
+      ));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,17 +86,37 @@ class _StockState extends State<Stock> {
                   color: Colors.transparent,
                   height: size.height * 0.1,
                 ),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(40),
-                  child: Container(
-                    width: size.width * 0.4,
-                    height: size.height * 0.2,
-                    child: Image.network(
-                      widget.dataStock["data"]["logo"],
-                      filterQuality: FilterQuality.high,
-                      fit: BoxFit.cover,
+                Stack(
+                  alignment: Alignment(0.8, -0.9),
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(40),
+                      child: Container(
+                        width: size.width * 0.6,
+                        height: size.height * 0.2,
+                        child: Image.network(
+                          widget.dataStock["data"]["logo"],
+                          filterQuality: FilterQuality.high,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                     ),
-                  ),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(40),
+                        color: Colors.black,
+                      ),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.add,
+                          color: Colors.white,
+                        ),
+                        onPressed: () async => await saveData(),
+                      ),
+                      width: 38,
+                      height: 38,
+                    )
+                  ],
                 ),
                 Divider(
                   color: Colors.transparent,
@@ -66,7 +146,43 @@ class _StockState extends State<Stock> {
                   child: _contructText(
                       "Sobre A Empresa: ${widget.dataStock["data"]["info"]}",
                       size),
-                )
+                ),
+                Text(
+                  "D* = Oscilação",
+                  style: TextStyle(color: Colors.white),
+                ),
+                /*LineGraph(
+                  size: Size(size.width, size.height * 0.3),
+                  labelX: ['D1', 'D2', 'D3', 'D4', 'D5'],
+                  labelY: ['1%', '5%', '10%', '20%', '40%'],
+                  showDescription: true,
+                  graphColor: Colors.white,
+                  features: [
+                    Feature(
+                        data: [0.0, 0.1, 0.2, 0.3, -0.3],
+                        color: Colors.red,
+                        title: "Eae"),
+                  ],
+                ) */
+                Container(
+                    width: size.width * 0.9,
+                    height: size.height * 0.2,
+                    margin: EdgeInsets.only(bottom: 16),
+                    child: Sparkline(
+                        lineWidth: 2,
+                        lineGradient: LinearGradient(
+                            colors: [Colors.black, Colors.white]),
+                        fillGradient: LinearGradient(
+                            colors: [Colors.white, Colors.black],
+                            begin: Alignment.bottomLeft),
+                        fillMode: FillMode.below,
+                        fillColor: Colors.black,
+                        data: [0.1, 0.2, 0.13, 0.3, 0.12],
+                        lineColor: Colors.white,
+                        pointColor: Colors.white,
+                        sharpCorners: true,
+                        pointSize: 16,
+                        pointsMode: PointsMode.all))
               ],
             ))));
   }

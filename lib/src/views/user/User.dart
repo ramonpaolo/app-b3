@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:Ibovespa/src/template/stock.dart';
+import 'package:Ibovespa/src/views/user/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -38,18 +39,24 @@ class _UserState extends State<User> {
       await datas["acoes"].length == 0 ? setState(() => error = true) : null;
 
       for (var x = 0; x < await datas["acoes"].length; x++) {
-        print(await datas["acoes"][x]["ticker"]);
-
-        http.Response response = await http.get(
-            "http://192.168.100.106:3000/?ticker=${datas["acoes"][x]["ticker"]}");
-        Map resposta = jsonDecode(response.body);
+        print("Ticker: " + await datas["acoes"][x]["ticker"]);
+        http.Response response = null;
+        try {
+          response = await http.get(
+              "http://192.168.100.106:3000/?ticker=${datas["acoes"][x]["ticker"]}");
+        } catch (e) {
+          response = await http.get(
+              "http://192.168.100.106:3000/?fii=${datas["acoes"][x]["ticker"]}");
+        }
+        Map resposta = await jsonDecode(response.body);
+        print("carregando......");
         setState(() {
           acoes.add({
             "data": {
               "ticker": datas["acoes"][x]["ticker"],
               "nome": datas["acoes"][x]["nome"],
-              "logo": datas["acoes"][x]["logo"],
-              "info": datas["acoes"][x]["info"],
+              "logo": resposta["data"]["logo"],
+              "info": resposta["data"]["info"],
               "oscilacao_cota": resposta["data"]["oscilacao_cota"],
               "preco_max_cota": resposta["data"]["preco_max_cota"],
               "preco_min_cota": resposta["data"]["preco_min_cota"],
@@ -247,102 +254,5 @@ class _UserState extends State<User> {
     }
     final file = await getDirectory();
     file.writeAsStringSync(jsonEncode({"acoes": acoes}));
-  }
-
-  bottomSheet(Size size, Map acoes, BuildContext context) {
-    return showModalBottomSheet(
-      context: context,
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(40), topRight: Radius.circular(40))),
-      builder: (context) {
-        return Container(
-          padding: EdgeInsets.only(left: 16, right: 16),
-          width: size.width,
-          height: size.height * 0.4,
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                Container(
-                  margin: EdgeInsets.only(bottom: 8),
-                  width: size.width * 0.1,
-                  height: 30,
-                  child: IconButton(
-                    tooltip: "Sair da janela",
-                    icon: Icon(
-                      Icons.clear,
-                      size: 28,
-                      color: Colors.red,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    child: Image.network(
-                      acoes["logo"],
-                      fit: BoxFit.cover,
-                      width: size.width * 0.5,
-                      height: size.height * 0.15,
-                    ),
-                  ),
-                ),
-                Text(
-                  acoes["nome"],
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  acoes["ticker"],
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  "Dividend Yield: ${acoes["dy"]} % a.a",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Divider(
-                  color: Colors.white,
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Preço Max no dia: R\$${acoes["preco_max_cota"]}",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text("|",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
-                    Text(
-                      "Preço Min no dia: R\$${acoes["preco_min_cota"]}",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-                Text(
-                  "Valor da Cota: ${acoes["valor_cota"]}",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  "Oscilação da cota no dia: ${acoes["oscilacao_cota"]}",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  "Ultimo pagamento de DY: ${acoes["ultimo_pagamento"]}",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Divider(
-                  color: Colors.white,
-                ),
-                Text(
-                  "Sobre a Empresa: ${acoes["info"]}",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 }
