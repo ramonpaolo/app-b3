@@ -1,5 +1,8 @@
-import 'package:Ibovespa/src/template/stock.dart';
+//---- Packages
 import 'package:flutter/material.dart';
+
+//---- Screens
+import 'package:Ibovespa/src/template/stock.dart';
 
 Widget stocks(Size size, Function getData, List stocks) {
   return RefreshIndicator(
@@ -7,8 +10,9 @@ Widget stocks(Size size, Function getData, List stocks) {
       child: Column(
         children: [
           Container(
+              margin: EdgeInsets.only(top: size.height * 0.01),
               width: size.width,
-              height: size.height * 0.75,
+              height: size.height * 0.8,
               child: ListView.builder(
                 itemCount: stocks.length,
                 padding: EdgeInsets.all(0),
@@ -89,13 +93,14 @@ Widget searchedStock(Size size, Map ticker) {
   return Column(
     children: [
       Divider(
-        height: size.height * 0.1,
+        height: size.height * 0.05,
+        color: Colors.transparent,
       ),
       ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: Container(
-            width: size.width * 0.5,
-            height: size.height * 0.2,
+            width: size.width * 0.65,
+            height: size.height * 0.25,
             child: Image.network(
               ticker["data"]["logo"],
               fit: BoxFit.cover,
@@ -122,11 +127,25 @@ Widget searchedStock(Size size, Map ticker) {
           text("R\$${ticker["data"]["valor_cota"]}"),
         ],
       ),
-      text("Oscilação da cota no dia: ${ticker["data"]["oscilacao_cota"]}"),
-      text("Divindend Yield: ${ticker["data"]["dy"]}% a.a"),
-      text("Ultimo pagamento: ${ticker["data"]["ultimo_pagamento"]}"),
-      Divider(
-        color: Colors.transparent,
+      text(
+        "Valor cota: R\$${double.parse(ticker["data"]["valor_cota"].replaceFirst(",", ".")).toStringAsFixed(2)}",
+      ),
+      ticker["data"]["ultimo_pagamento"] == null
+          ? text("*ETFs não pagam DY*")
+          : text(
+              "DY 12 meses: ${ticker["data"]["dy"]}%.a.a",
+            ),
+      ticker["data"]["ultimo_pagamento"] == null
+          ? text("*ETFs não pagam DY*")
+          : text(
+              "Pagamento DY 12 últimos meses: ${ticker["data"]["ultimo_pagamento"].replaceAll(new RegExp(r'\s+'), '')}",
+            ),
+      text(
+        "Preço Min em 12 meses: R\$${ticker["data"]["preco_min_cota"]}",
+      ),
+      text("Preço Max em 12 meses: R\$${ticker["data"]["preco_max_cota"]}"),
+      text(
+        "Oscilação: ${ticker["data"]["oscilacao_cota"]}",
       ),
       Padding(
         padding: EdgeInsets.all(16),

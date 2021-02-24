@@ -1,7 +1,10 @@
+//---- Packages
 import 'dart:convert';
-import 'package:Ibovespa/src/views/home/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+
+//---- Widgets
+import 'package:Ibovespa/src/views/home/widgets.dart';
 
 class Home extends StatefulWidget {
   Home({Key key, this.dataHome}) : super(key: key);
@@ -13,7 +16,6 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   bool _campSearch = false;
   bool err = false;
-  bool switchStock = true;
 
   List acoes = [];
 
@@ -26,12 +28,13 @@ class _HomeState extends State<Home> {
   TextEditingController _controllerTicker = TextEditingController();
 
   Future getData() async {
+    acoes.clear();
+    Map resposta;
+    http.Response response;
     List stocks = [
-      "taee11",
       "taee4",
       "taee3",
       "itub4",
-      "itsa4",
       "enbr3",
       "sapr4",
       "bidi4",
@@ -39,20 +42,32 @@ class _HomeState extends State<Home> {
       "mdia3",
       "bcff11",
       "hfof11",
-      "abcp11"
+      "abcp11",
+      "bpff11",
+      "ivvb11",
+      "nvdc34",
     ];
     try {
       for (var x = 0; x < stocks.length; x++) {
-        http.Response response = null;
-        try {
-          response = await http
-              .get("http://192.168.100.106:3000/?ticker=${stocks[x]}");
-        } catch (e) {
+        response =
+            await http.get("http://dbf8f8ea650e.ngrok.io/?ticker=${stocks[x]}");
+        resposta = await jsonDecode(response.body);
+
+        if (resposta["data"]["valor_cota"] == "AÇÕES") {
           response =
-              await http.get("http://192.168.100.106:3000/?fii=${stocks[x]}");
+              await http.get("http://dbf8f8ea650e.ngrok.io/?fii=${stocks[x]}");
+          resposta = await jsonDecode(response.body);
+
+          if (resposta["data"]["ticker"].toString().endsWith("34")) {
+            response = await http
+                .get("http://dbf8f8ea650e.ngrok.io/?bdrs=${stocks[x]}");
+            resposta = await jsonDecode(response.body);
+          } else if (resposta["data"]["valor_cota"] == "AÇÕES") {
+            response = await http
+                .get("http://dbf8f8ea650e.ngrok.io/?etfs=${stocks[x]}");
+            resposta = await jsonDecode(response.body);
+          }
         }
-        Map resposta = await jsonDecode(response.body);
-        print(resposta);
         setState(() {
           acoes.add(resposta);
         });
@@ -67,18 +82,30 @@ class _HomeState extends State<Home> {
   }
 
   Future searchTicker() async {
+    Map resposta = {};
     try {
-      http.Response response = null;
-      if (switchStock) {
+      http.Response response;
+      response = await http.get(
+          "http://dbf8f8ea650e.ngrok.io/?ticker=${_controllerTicker.text.toLowerCase()}");
+      resposta = await jsonDecode(response.body);
+      if (resposta["data"]["valor_cota"] == "AÇÕES") {
         response = await http.get(
-            "http://192.168.100.106:3000/?ticker=${_controllerTicker.text.toLowerCase()}");
-      } else {
-        response = await http.get(
-            "http://192.168.100.106:3000/?fii=${_controllerTicker.text.toLowerCase()}");
+            "http://dbf8f8ea650e.ngrok.io/?fii=${_controllerTicker.text.toLowerCase()}");
+        resposta = await jsonDecode(response.body);
+
+        if (resposta["data"]["ticker"].toString().endsWith("34")) {
+          response = await http.get(
+              "http://dbf8f8ea650e.ngrok.io/?bdrs=${_controllerTicker.text.toLowerCase()}");
+          resposta = await jsonDecode(response.body);
+        } else if (resposta["data"]["valor_cota"] == "AÇÕES") {
+          response = await http.get(
+              "http://dbf8f8ea650e.ngrok.io/?etfs=${_controllerTicker.text.toLowerCase()}");
+          resposta = await jsonDecode(response.body);
+          resposta["data"]["dy"] = "0.01";
+        }
       }
-      print(await jsonDecode(response.body));
       setState(() {
-        ticker = jsonDecode(response.body);
+        ticker = resposta;
       });
       return ticker;
     } catch (e) {
@@ -122,7 +149,6 @@ class _HomeState extends State<Home> {
                     children: [
                       GestureDetector(
                         onTap: () {
-                          print("Eae");
                           setState(() {
                             _campSearch = !_campSearch;
                           });
@@ -199,20 +225,6 @@ class _HomeState extends State<Home> {
                       ),
                     ],
                   ),
-                ),
-                Switch(
-                  onChanged: (c) {
-                    setState(() {
-                      switchStock = c;
-                    });
-                    if (c) {
-                      snackBar("Procurar por Ações");
-                    } else {
-                      snackBar("Procurar por FIIs");
-                    }
-                  },
-                  activeColor: Colors.white,
-                  value: switchStock,
                 ),
                 ticker["data"]["dy"] == null
                     ? err == false

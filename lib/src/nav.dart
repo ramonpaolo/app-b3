@@ -23,16 +23,22 @@ class _NavState extends State<Nav> {
         items: [
           BottomNavigationBarItem(
               icon: Icon(
-                Icons.monetization_on,
+                Icons.home,
                 color: Colors.white,
               ),
-              label: "Home"),
+              title: Text(
+                "Home",
+                style: TextStyle(color: Colors.white),
+              )),
           BottomNavigationBarItem(
             icon: Icon(
-              Icons.follow_the_signs,
+              Icons.person,
               color: Colors.white,
             ),
-            label: "Seguidas",
+            title: Text(
+              "User",
+              style: TextStyle(color: Colors.white),
+            ),
           )
         ],
         selectedItemColor: Colors.white,

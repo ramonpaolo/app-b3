@@ -1,11 +1,15 @@
+//---- Packages
 import 'dart:convert';
 import 'dart:io';
-
-import 'package:Ibovespa/src/template/stock.dart';
-import 'package:Ibovespa/src/views/user/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+
+//---- Widgets
+import 'package:Ibovespa/src/views/user/widgets.dart';
+
+//---- Screen
+import 'package:Ibovespa/src/template/stock.dart';
 
 class User extends StatefulWidget {
   @override
@@ -34,37 +38,36 @@ class _UserState extends State<User> {
 
   Future getData() async {
     try {
+      Map resposta;
       final file = await getDirectory();
       final datas = await jsonDecode(file.readAsStringSync());
       await datas["acoes"].length == 0 ? setState(() => error = true) : null;
 
       for (var x = 0; x < await datas["acoes"].length; x++) {
-        print("Ticker: " + await datas["acoes"][x]["ticker"]);
-        http.Response response = null;
-        try {
+        http.Response response;
+
+        response = await http.get(
+            "http://dbf8f8ea650e.ngrok.io/?ticker=${datas["acoes"][x]["ticker"]}");
+        resposta = await jsonDecode(response.body);
+
+        if (resposta["data"]["valor_cota"] == "AÇÕES") {
           response = await http.get(
-              "http://192.168.100.106:3000/?ticker=${datas["acoes"][x]["ticker"]}");
-        } catch (e) {
-          response = await http.get(
-              "http://192.168.100.106:3000/?fii=${datas["acoes"][x]["ticker"]}");
+              "http://dbf8f8ea650e.ngrok.io/?fii=${datas["acoes"][x]["ticker"]}");
+          resposta = await jsonDecode(response.body);
+
+          if (resposta["data"]["ticker"].toString().endsWith("34")) {
+            response = await http.get(
+                "http://dbf8f8ea650e.ngrok.io/?bdrs=${datas["acoes"][x]["ticker"]}");
+            resposta = await jsonDecode(response.body);
+          } else if (resposta["data"]["valor_cota"] == "AÇÕES") {
+            response = await http.get(
+                "http://dbf8f8ea650e.ngrok.io/?etfs=${datas["acoes"][x]["ticker"]}");
+            resposta = await jsonDecode(response.body);
+          }
         }
-        Map resposta = await jsonDecode(response.body);
-        print("carregando......");
+
         setState(() {
-          acoes.add({
-            "data": {
-              "ticker": datas["acoes"][x]["ticker"],
-              "nome": datas["acoes"][x]["nome"],
-              "logo": resposta["data"]["logo"],
-              "info": resposta["data"]["info"],
-              "oscilacao_cota": resposta["data"]["oscilacao_cota"],
-              "preco_max_cota": resposta["data"]["preco_max_cota"],
-              "preco_min_cota": resposta["data"]["preco_min_cota"],
-              "valor_cota": resposta["data"]["valor_cota"],
-              "ultimo_pagamento": resposta["data"]["ultimo_pagamento"],
-              "dy": resposta["data"]["dy"]
-            }
-          });
+          acoes.add(resposta);
         });
       }
 

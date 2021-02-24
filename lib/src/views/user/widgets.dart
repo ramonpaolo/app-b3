@@ -52,27 +52,33 @@ bottomSheet(Size size, Map stock, BuildContext context) {
               _text(
                 stock["ticker"],
               ),
-              _text(
-                "Dividend Yield: ${stock["dy"]} % a.a",
-              ),
+              stock["ultimo_pagamento"] == null
+                  ? _text("*ETFs não pagam DY*")
+                  : _text(
+                      "Dividend Yield: ${stock["dy"]}% a.a",
+                    ),
               Divider(
                 color: Colors.white,
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _text("Preço Max no dia: R\$${stock["preco_max_cota"]}"),
+                  _text("Preço Max 12m*: R\$${stock["preco_max_cota"]}"),
                   _text("|"),
-                  _text("Preço Min no dia: R\$${stock["preco_min_cota"]}"),
+                  _text("Preço Min 12m*: R\$${stock["preco_min_cota"]}"),
                 ],
               ),
               _text("Valor da Cota: ${stock["valor_cota"]}"),
               _text("Oscilação da cota no dia: ${stock["oscilacao_cota"]}"),
-              _text("Ultimo pagamento de DY: ${stock["ultimo_pagamento"]}"),
+              stock["ultimo_pagamento"] == null
+                  ? _text("*ETFs não pagam DY*")
+                  : _text(
+                      "Ultimo pagamento de DY 12m*: ${stock["ultimo_pagamento"]}"),
               Divider(
                 color: Colors.white,
               ),
               _text("Sobre a Empresa: ${stock["info"]}"),
+              _text("12m* = 12 Meses")
             ],
           ),
         ),

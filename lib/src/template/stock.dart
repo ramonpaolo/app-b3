@@ -1,7 +1,7 @@
+//---- Packages
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
-
 import 'package:draw_graph/draw_graph.dart';
 import 'package:draw_graph/models/feature.dart';
 import 'package:draw_graph/widgets/lineGraph.dart';
@@ -46,14 +46,13 @@ class _StockState extends State<Stock> {
       });
       data["acoes"] = acoes;
       print(await data);
-      await file.writeAsStringSync(jsonEncode(data));
-
+      file.writeAsStringSync(jsonEncode(data));
       _snack.currentState.removeCurrentSnackBar();
       _snack.currentState.showSnackBar(SnackBar(
         content: Text("Adicionado na carteira"),
       ));
     } catch (e) {
-      await file.writeAsStringSync(jsonEncode({
+      file.writeAsStringSync(jsonEncode({
         "acoes": [
           {
             "ticker": widget.dataStock["data"]["ticker"],
@@ -121,29 +120,33 @@ class _StockState extends State<Stock> {
                 Divider(
                   color: Colors.transparent,
                 ),
-                _contructText("${widget.dataStock["data"]["nome"]}", size),
-                _contructText("${widget.dataStock["data"]["ticker"]}", size),
-                _contructText(
+                _text("${widget.dataStock["data"]["nome"]}", size),
+                _text("${widget.dataStock["data"]["ticker"]}", size),
+                _text(
                     "Valor cota: R\$${double.parse(widget.dataStock["data"]["valor_cota"].replaceFirst(",", ".")).toStringAsFixed(2)}",
                     size),
-                _contructText(
-                    "DY 12 meses: ${widget.dataStock["data"]["dy"]}%.a.a",
+                widget.dataStock["data"]["ultimo_pagamento"] == null
+                    ? _text("*ETFs não pagam DY*", size)
+                    : _text(
+                        "DY 12 meses: ${widget.dataStock["data"]["dy"]}%.a.a",
+                        size),
+                widget.dataStock["data"]["ultimo_pagamento"] == null
+                    ? _text("*ETFs não pagam DY*", size)
+                    : _text(
+                        "Pagamento DY 12 últimos meses: ${widget.dataStock["data"]["ultimo_pagamento"]}",
+                        size),
+                _text(
+                    "Preço Min em 12 meses: R\$${widget.dataStock["data"]["preco_min_cota"]}",
                     size),
-                _contructText(
-                    "Data do pagamento: ${widget.dataStock["data"]["ultimo_pagamento"]}",
+                _text(
+                    "Preço Max em 12 meses: R\$${widget.dataStock["data"]["preco_max_cota"]}",
                     size),
-                _contructText(
-                    "Preço Min no dia: R\$${widget.dataStock["data"]["preco_min_cota"]}",
-                    size),
-                _contructText(
-                    "Preço Max no dia: R\$${widget.dataStock["data"]["preco_max_cota"]}",
-                    size),
-                _contructText(
+                _text(
                     "Oscilação: ${widget.dataStock["data"]["oscilacao_cota"]}",
                     size),
                 Padding(
                   padding: EdgeInsets.all(16),
-                  child: _contructText(
+                  child: _text(
                       "Sobre A Empresa: ${widget.dataStock["data"]["info"]}",
                       size),
                 ),
@@ -151,7 +154,7 @@ class _StockState extends State<Stock> {
                   "D* = Oscilação",
                   style: TextStyle(color: Colors.white),
                 ),
-                /*LineGraph(
+                LineGraph(
                   size: Size(size.width, size.height * 0.3),
                   labelX: ['D1', 'D2', 'D3', 'D4', 'D5'],
                   labelY: ['1%', '5%', '10%', '20%', '40%'],
@@ -163,7 +166,7 @@ class _StockState extends State<Stock> {
                         color: Colors.red,
                         title: "Eae"),
                   ],
-                ) */
+                ),
                 Container(
                     width: size.width * 0.9,
                     height: size.height * 0.2,
@@ -187,16 +190,13 @@ class _StockState extends State<Stock> {
             ))));
   }
 
-  Widget _contructText(String text, Size size) {
+  Widget _text(String text, Size size) {
     return Column(
       children: [
         Text(
           text,
           style: TextStyle(color: Colors.white, fontSize: 16),
         ),
-        Divider(
-          height: size.height * 0.01,
-        )
       ],
     );
   }
