@@ -1,5 +1,6 @@
 //---- Packages
 import 'dart:convert';
+import 'package:Ibovespa/src/template/stock.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -7,19 +8,16 @@ import 'package:http/http.dart' as http;
 import 'package:Ibovespa/src/views/home/widgets.dart';
 
 class Home extends StatefulWidget {
-  Home({Key key, this.dataHome}) : super(key: key);
-  final Map dataHome;
   @override
   _HomeState createState() => _HomeState();
 }
 
 class _HomeState extends State<Home> {
-  bool _campSearch = false;
-  bool err = false;
+  bool _campSearch = false, err = false;
+
+  double dolar = 0.0, euro = 0.0;
 
   List acoes = [];
-
-  var _snack = GlobalKey<ScaffoldState>();
 
   Map ticker = {
     "data": {"dy": null}
@@ -27,47 +25,34 @@ class _HomeState extends State<Home> {
 
   TextEditingController _controllerTicker = TextEditingController();
 
+  Future getMoney() async {
+    try {
+      String url = "https://api.hgbrasil.com/finance/?key=f805f342";
+      http.Response response = await http.get(url);
+      Map value = await jsonDecode(response.body);
+      setState(() {
+        //dolar = value["results"]["currencies"]["USD"]["buy"];
+        //euro = value["results"]["currencies"]["EUR"]["buy"];
+        dolar = 2.0;
+        euro = 3.0;
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
+
   Future getData() async {
+    await getMoney();
+    //List stocks = ["taee4", "sapr4", "egie3", "bcff11", "ivvb11", "nvdc34"];
+    List stocks = ["taee4"];
     acoes.clear();
     Map resposta;
     http.Response response;
-    List stocks = [
-      "taee4",
-      "taee3",
-      "itub4",
-      "enbr3",
-      "sapr4",
-      "bidi4",
-      "egie3",
-      "mdia3",
-      "bcff11",
-      "hfof11",
-      "abcp11",
-      "bpff11",
-      "ivvb11",
-      "nvdc34",
-    ];
     try {
       for (var x = 0; x < stocks.length; x++) {
-        response =
-            await http.get("http://dbf8f8ea650e.ngrok.io/?ticker=${stocks[x]}");
+        response = await http
+            .get("https://dbf8f8ea650e.ngrok.io/?ticker=${stocks[x]}");
         resposta = await jsonDecode(response.body);
-
-        if (resposta["data"]["valor_cota"] == "AÇÕES") {
-          response =
-              await http.get("http://dbf8f8ea650e.ngrok.io/?fii=${stocks[x]}");
-          resposta = await jsonDecode(response.body);
-
-          if (resposta["data"]["ticker"].toString().endsWith("34")) {
-            response = await http
-                .get("http://dbf8f8ea650e.ngrok.io/?bdrs=${stocks[x]}");
-            resposta = await jsonDecode(response.body);
-          } else if (resposta["data"]["valor_cota"] == "AÇÕES") {
-            response = await http
-                .get("http://dbf8f8ea650e.ngrok.io/?etfs=${stocks[x]}");
-            resposta = await jsonDecode(response.body);
-          }
-        }
         setState(() {
           acoes.add(resposta);
         });
@@ -86,24 +71,8 @@ class _HomeState extends State<Home> {
     try {
       http.Response response;
       response = await http.get(
-          "http://dbf8f8ea650e.ngrok.io/?ticker=${_controllerTicker.text.toLowerCase()}");
+          "https://dbf8f8ea650e.ngrok.io/?ticker=${_controllerTicker.text.toLowerCase()}");
       resposta = await jsonDecode(response.body);
-      if (resposta["data"]["valor_cota"] == "AÇÕES") {
-        response = await http.get(
-            "http://dbf8f8ea650e.ngrok.io/?fii=${_controllerTicker.text.toLowerCase()}");
-        resposta = await jsonDecode(response.body);
-
-        if (resposta["data"]["ticker"].toString().endsWith("34")) {
-          response = await http.get(
-              "http://dbf8f8ea650e.ngrok.io/?bdrs=${_controllerTicker.text.toLowerCase()}");
-          resposta = await jsonDecode(response.body);
-        } else if (resposta["data"]["valor_cota"] == "AÇÕES") {
-          response = await http.get(
-              "http://dbf8f8ea650e.ngrok.io/?etfs=${_controllerTicker.text.toLowerCase()}");
-          resposta = await jsonDecode(response.body);
-          resposta["data"]["dy"] = "0.01";
-        }
-      }
       setState(() {
         ticker = resposta;
       });
@@ -115,8 +84,8 @@ class _HomeState extends State<Home> {
   }
 
   snackBar(String text) {
-    _snack.currentState.removeCurrentSnackBar();
-    _snack.currentState.showSnackBar(SnackBar(
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(
         text,
       ),
@@ -130,11 +99,19 @@ class _HomeState extends State<Home> {
   }
 
   @override
+  void dispose() {
+    // TODO: implement dispose
+    _controllerTicker.dispose();
+    ScaffoldMessenger.of(context).dispose();
+    acoes.clear();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     return Scaffold(
         backgroundColor: Colors.grey[900],
-        key: _snack,
         body: Container(
             width: size.width,
             height: size.height,
@@ -154,7 +131,7 @@ class _HomeState extends State<Home> {
                           });
                         },
                         child: Container(
-                            margin: EdgeInsets.only(right: size.width * 0.02),
+                            margin: EdgeInsets.only(right: size.width * 0.13),
                             width: size.width * 0.12,
                             height: size.height * 0.06,
                             decoration: BoxDecoration(
@@ -167,7 +144,7 @@ class _HomeState extends State<Home> {
                       ),
                       AnimatedCrossFade(
                         firstChild: Container(
-                          width: size.width * 0.81,
+                          width: size.width * 0.7,
                           decoration: BoxDecoration(
                               color: Colors.black,
                               borderRadius: BorderRadius.circular(40)),
@@ -211,9 +188,10 @@ class _HomeState extends State<Home> {
                         ),
                         secondChild: Container(
                             margin: EdgeInsets.only(
-                                left: size.width * 0.3,
+                                left: size.width * 0.23,
                                 top: size.height * 0.02),
-                            child: Text("Dólar: R\$5.28 Euro: R\$6.99",
+                            child: Text(
+                                "Dólar: R\$${dolar.toString().characters.getRange(0, 4)} Euro: R\$${euro.toString().characters.getRange(0, 4)}",
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
@@ -247,7 +225,7 @@ class _HomeState extends State<Home> {
                                     color: Colors.white, fontSize: 24),
                               ),
                             )))
-                    : searchedStock(size, ticker)
+                    : searchedStock(size, ticker["data"], context)
               ]),
             )));
   }
