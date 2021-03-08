@@ -1,4 +1,6 @@
 //---- Packages
+import 'package:Ibovespa/src/nav.dart';
+import 'package:Ibovespa/src/views/home/Home.dart';
 import 'package:flutter/material.dart';
 import 'package:simple_splashscreen/simple_splashscreen.dart';
 
@@ -8,7 +10,8 @@ import 'package:Ibovespa/src/auth/Login.dart';
 void main() {
   runApp(MaterialApp(
     title: "Ibovespa",
-    home: SplashScreen(),
+    home: Nav(), // SplashScreen(),
+    theme: ThemeData(fontFamily: "Roboto"),
   ));
 }
 
