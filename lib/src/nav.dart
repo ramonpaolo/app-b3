@@ -2,8 +2,8 @@
 import 'package:flutter/material.dart';
 
 //---- Screens
-import 'package:Ibovespa/src/views/home/Home.dart';
-import 'package:Ibovespa/src/views/user/User.dart';
+import 'package:Ibovespa/src/views/home/home.page.dart';
+import 'package:Ibovespa/src/views/user/user.page.dart';
 
 class Nav extends StatefulWidget {
   @override

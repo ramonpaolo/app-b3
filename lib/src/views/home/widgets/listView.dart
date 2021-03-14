@@ -1,14 +1,13 @@
 //---- Packages
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
-
-//---- Screens
-import 'package:Ibovespa/src/template/stock.dart';
 import 'package:path_provider/path_provider.dart';
 
-Widget stocks(Size size, Function getData, List stocks) {
+//---- Screens
+import 'package:Ibovespa/src/template/stock.page.dart';
+
+Widget listView(Size size, Function getData, List stocks) {
   return RefreshIndicator(
       onRefresh: getData,
       child: Column(
@@ -32,12 +31,16 @@ Widget stocks(Size size, Function getData, List stocks) {
                                       dataStock: stocks[index]["data"],
                                     ))),
                         child: Card(
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.only(
+                                  topRight: Radius.circular(40),
+                                  bottomRight: Radius.circular(40),
+                                  bottomLeft: Radius.circular(12),
+                                  topLeft: Radius.circular(12))),
                           child: Row(
                             children: [
                               ClipRRect(
-                                borderRadius: BorderRadius.only(
-                                    bottomLeft: Radius.circular(3),
-                                    topLeft: Radius.circular(3)),
+                                borderRadius: BorderRadius.circular(12),
                                 child: Container(
                                     width: size.width * 0.3,
                                     height: size.height * 0.12,

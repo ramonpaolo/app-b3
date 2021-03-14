@@ -6,7 +6,7 @@ class ForgotPassword extends StatefulWidget {
 }
 
 class _ForgotPasswordState extends State<ForgotPassword> {
-  TextEditingController _controllerEmail = TextEditingController();
+  TextEditingController _controllerEmail = TextEditingController(text: "");
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +19,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
             Container(
               width: size.width,
               height: size.height * 0.25,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.only(
                       bottomLeft: Radius.circular(60),
@@ -30,13 +30,14 @@ class _ForgotPasswordState extends State<ForgotPassword> {
               height: size.height * 0.18,
             ),
             Padding(
-                padding: EdgeInsets.all(8),
-                child: Text(
-                  """Para podermos ajudá-lo a recuperar a sua senha, digite o seu email no campo a baixo para que possamos enviar um email de redefinir senha.""",
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                )),
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                "Para podermos ajudá-lo a recuperar a sua senha, digite o seu email no campo a baixo para que possamos enviar um email de redefinir senha.",
+                style: TextStyle(fontSize: 16, color: Colors.white),
+              ),
+            ),
             Container(
-              margin: EdgeInsets.only(top: 8),
+              margin: const EdgeInsets.only(top: 8),
               width: size.width * 0.9,
               height: size.height * 0.06,
               decoration: BoxDecoration(
@@ -44,7 +45,8 @@ class _ForgotPasswordState extends State<ForgotPassword> {
               child: TextField(
                 controller: _controllerEmail,
                 decoration: InputDecoration(
-                  hintText: "Digite seu email aqui",
+                  contentPadding: EdgeInsets.only(top: size.height * 0.018),
+                  hintText: "Digite seu email",
                   prefixIcon: Icon(
                     Icons.email,
                     color: Colors.black,
@@ -63,7 +65,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                 }
               },
               child: Container(
-                  margin: EdgeInsets.only(top: 8),
+                  margin: const EdgeInsets.only(top: 8),
                   width: size.width * 0.3,
                   height: size.height * 0.05,
                   decoration: BoxDecoration(

@@ -1,11 +1,11 @@
 //---- Packages
 import 'dart:convert';
-import 'package:Ibovespa/src/template/stock.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 //---- Widgets
-import 'package:Ibovespa/src/views/home/widgets.dart';
+import 'package:Ibovespa/src/views/home/widgets/listView.dart';
+import 'package:Ibovespa/src/views/home/widgets/listGridView.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -13,11 +13,23 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  bool _campSearch = false, err = false;
+  bool _campSearch = false, err = false, grid = false;
 
   double dolar = 0.0, euro = 0.0;
 
   List acoes = [];
+
+  List stockss = [
+    "taee4",
+    "sapr4",
+    "egie3",
+    "bcff11",
+    "ivvb11",
+    "nvdc34",
+    "bidi4",
+    "tiet4",
+    "bbse3"
+  ];
 
   Map ticker = {
     "data": {"dy": null}
@@ -31,10 +43,10 @@ class _HomeState extends State<Home> {
       http.Response response = await http.get(url);
       Map value = await jsonDecode(response.body);
       setState(() {
-        //dolar = value["results"]["currencies"]["USD"]["buy"];
-        //euro = value["results"]["currencies"]["EUR"]["buy"];
-        dolar = 2.0;
-        euro = 3.0;
+        dolar = value["results"]["currencies"]["USD"]["buy"];
+        euro = value["results"]["currencies"]["EUR"]["buy"];
+        //dolar = 2.0;
+        //euro = 3.0;
       });
     } catch (e) {
       print(e);
@@ -43,15 +55,14 @@ class _HomeState extends State<Home> {
 
   Future getData() async {
     await getMoney();
-    //List stocks = ["taee4", "sapr4", "egie3", "bcff11", "ivvb11", "nvdc34"];
-    List stocks = ["taee4"];
+    //List stocks = ["taee4"];
     acoes.clear();
     Map resposta;
     http.Response response;
     try {
-      for (var x = 0; x < stocks.length; x++) {
+      for (var x = 0; x < stockss.length; x++) {
         response = await http
-            .get("https://dbf8f8ea650e.ngrok.io/?ticker=${stocks[x]}");
+            .get("https://dbf8f8ea650e.ngrok.io/?ticker=${stockss[x]}");
         resposta = await jsonDecode(response.body);
         setState(() {
           acoes.add(resposta);
@@ -59,6 +70,7 @@ class _HomeState extends State<Home> {
       }
     } catch (e) {
       print(e);
+      stockss.clear();
       setState(() {
         err = true;
       });
@@ -73,6 +85,8 @@ class _HomeState extends State<Home> {
       response = await http.get(
           "https://dbf8f8ea650e.ngrok.io/?ticker=${_controllerTicker.text.toLowerCase()}");
       resposta = await jsonDecode(response.body);
+      if (resposta["data"]["dy"] == null) resposta["data"]["dy"] = 0.01;
+
       setState(() {
         ticker = resposta;
       });
@@ -104,6 +118,8 @@ class _HomeState extends State<Home> {
     _controllerTicker.dispose();
     ScaffoldMessenger.of(context).dispose();
     acoes.clear();
+    stockss.clear();
+    ticker.clear();
     super.dispose();
   }
 
@@ -187,15 +203,34 @@ class _HomeState extends State<Home> {
                           ),
                         ),
                         secondChild: Container(
-                            margin: EdgeInsets.only(
-                                left: size.width * 0.23,
-                                top: size.height * 0.02),
-                            child: Text(
-                                "Dólar: R\$${dolar.toString().characters.getRange(0, 4)} Euro: R\$${euro.toString().characters.getRange(0, 4)}",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ))),
+                            width: size.width * 0.7,
+                            height: size.height * 0.05,
+                            margin: EdgeInsets.only(top: size.height * 0.01),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                    "Dólar: R\$${dolar.toString().characters.getRange(0, 4)} Euro: R\$${euro.toString().characters.getRange(0, 4)}",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    )),
+                                Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                        color: Colors.black,
+                                        borderRadius:
+                                            BorderRadius.circular(40)),
+                                    child: IconButton(
+                                        icon: Icon(
+                                          Icons.grid_on,
+                                          color: Colors.white,
+                                        ),
+                                        onPressed: () =>
+                                            setState(() => grid = !grid)))
+                              ],
+                            )),
                         duration: Duration(milliseconds: 700),
                         crossFadeState: _campSearch
                             ? CrossFadeState.showFirst
@@ -207,7 +242,9 @@ class _HomeState extends State<Home> {
                 ticker["data"]["dy"] == null
                     ? err == false
                         ? acoes.length >= 1
-                            ? stocks(size, getData, acoes)
+                            ? grid
+                                ? listGrid(size, getData, acoes)
+                                : listView(size, getData, acoes)
                             : Container(
                                 margin: EdgeInsets.only(top: size.height * 0.3),
                                 child: Center(
@@ -219,12 +256,16 @@ class _HomeState extends State<Home> {
                             margin: EdgeInsets.only(top: size.height * 0.5),
                             child: Center(
                                 child: Center(
+                                    child: TextButton(
                               child: Text(
                                 "Error",
                                 style: TextStyle(
                                     color: Colors.white, fontSize: 24),
                               ),
-                            )))
+                              onPressed: () async {
+                                await getData();
+                              },
+                            ))))
                     : searchedStock(size, ticker["data"], context)
               ]),
             )));

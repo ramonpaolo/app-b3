@@ -17,14 +17,123 @@ class Stock extends StatefulWidget {
 }
 
 class _StockState extends State<Stock> {
-  Map wallet;
-
-  bool checkboxWallet = false;
+  bool checkboxWallet = false, createdWallet = false;
 
   String selectedWallet = "";
 
-  Map carteira = {};
-  List carteiras = [];
+  Map wallet;
+
+  TextEditingController _controllerTextWallet = TextEditingController(text: "");
+
+  void createWallet(Size size) async {
+    return showModalBottomSheet(
+        context: context,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(40), topRight: Radius.circular(40))),
+        builder: (context) => StatefulBuilder(
+            builder: (context, setState) => Container(
+                  padding: EdgeInsets.only(top: 32, left: 32),
+                  width: size.width,
+                  height: size.height * 0.2,
+                  child: TextField(
+                    keyboardType: TextInputType.text,
+                    decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: "Digite o Nome da sua carteira"),
+                    controller: _controllerTextWallet,
+                    onChanged: (c) {
+                      print(_controllerTextWallet.text);
+                    },
+                    onSubmitted: (s) async {
+                      final directory =
+                          await getApplicationDocumentsDirectory();
+                      final file = File(directory.path + "/data.json");
+                      var data;
+                      try {
+                        data = await jsonDecode(file.readAsStringSync());
+                        await data["wallets"].add(
+                            {_controllerTextWallet.text.toLowerCase(): []});
+                        await file.writeAsString(jsonEncode(await data));
+                      } catch (e) {
+                        data = await file.writeAsString(jsonEncode({
+                          "wallets": [
+                            {"${_controllerTextWallet.text}": []}
+                          ]
+                        }));
+                        setState(() => createdWallet = true);
+                        print("CATCH------------------------");
+                      }
+
+                      setState(() {
+                        _controllerTextWallet.clear();
+                      });
+                      if (data["wallets"].length == 1) {
+                        Navigator.pop(context);
+                      } else {
+                        Navigator.pop(context);
+                        Navigator.pop(context);
+                      }
+                      await saveData(size);
+                    },
+                  ),
+                )));
+    /* return await showMenu(
+        context: context,
+        initialValue: "",
+        color: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 0.0,
+        position: RelativeRect.fromLTRB(0, 0, 0, 0),
+        //position: RelativeRect.fromLTRB(0, size.height * 0.3, 0, 0),
+        //position: RelativeRect.fromLTRB(110, 120, 110, 0),
+        items: [
+          PopupMenuItem(
+            value: _controllerTextWallet.text,
+            child: TextField(
+              keyboardType: TextInputType.text,
+              decoration: InputDecoration(
+                  fillColor: Colors.white,
+                  border: InputBorder.none,
+                  hintText: "Digite o Nome da sua carteira"),
+              controller: _controllerTextWallet,
+              onChanged: (c) {
+                print(_controllerTextWallet.text);
+              },
+              onSubmitted: (s) async {
+                final directory = await getApplicationDocumentsDirectory();
+                final file = File(directory.path + "/data.json");
+                var data;
+                try {
+                  data = await jsonDecode(file.readAsStringSync());
+                  await data["wallets"]
+                      .add({_controllerTextWallet.text.toLowerCase(): []});
+                  await file.writeAsString(jsonEncode(await data));
+                } catch (e) {
+                  data = await file.writeAsString(jsonEncode({
+                    "wallets": [
+                      {"${_controllerTextWallet.text}": []}
+                    ]
+                  }));
+                  setState(() => createdWallet = true);
+                  print("CATCH------------------------");
+                }
+
+                setState(() {
+                  _controllerTextWallet.clear();
+                });
+                if (data["wallets"].length == 1) {
+                  Navigator.pop(context);
+                } else {
+                  Navigator.pop(context);
+                  Navigator.pop(context);
+                }
+                await saveData(size);
+              },
+            ),
+          )
+        ]);*/
+  }
 
   selectWallet(Size size, List allWallets) async {
     List qtdCarteiras = [];
@@ -45,14 +154,32 @@ class _StockState extends State<Stock> {
         return StatefulBuilder(
           builder: (context, setState) {
             return Container(
-                padding: EdgeInsets.all(32),
+                padding: EdgeInsets.only(top: 32),
                 width: size.width,
                 height: size.height * 0.4,
                 child: Column(
                   children: [
-                    Text("Selecione uma carteira"),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Selecione uma carteira ou",
+                          style: TextStyle(fontSize: 16),
+                        ),
+                        IconButton(
+                            tooltip: "Criar Carteira",
+                            icon: Icon(
+                              Icons.add,
+                              color: Colors.black,
+                            ),
+                            onPressed: () async {
+                              await createWallet(size);
+                            })
+                      ],
+                    ),
                     Expanded(
                         child: ListView.builder(
+                            padding: EdgeInsets.all(0),
                             itemCount: qtdCarteiras.length,
                             itemBuilder: (context, index) => Container(
                                 width: size.width,
@@ -66,8 +193,8 @@ class _StockState extends State<Stock> {
                                     Navigator.pop(context);
                                   },
                                   child: ListTile(
-                                    title:
-                                        Text("${qtdCarteiras[index]["name"]}"),
+                                    title: Text(
+                                        "${qtdCarteiras[index]["name"].toString().characters.replaceFirst(qtdCarteiras[index]["name"].toString().characters.characterAt(0), qtdCarteiras[index]["name"].toString().characters.characterAt(0).toUpperCase())}"),
                                     subtitle: Text(
                                         "Quantidade de ações: ${qtdCarteiras[index]["lengthStocks"]}"),
                                   ),
@@ -91,34 +218,25 @@ class _StockState extends State<Stock> {
       data = await jsonDecode(file.readAsStringSync());
     } catch (e) {
       print("Criando arquivo....");
-      file.writeAsStringSync(jsonEncode({
-        "wallets": [
-          {"dividendos": []},
-          {"oscilações": []}
-        ]
-      }));
+      file.writeAsStringSync(jsonEncode({"wallets": []}));
       data = await jsonDecode(file.readAsStringSync());
       print("Arquivo Criado com Sucesso....");
     }
 
-    //print(data);
+    await data["wallets"].length >= 1
+        ? await selectWallet(size, await data["wallets"])
+        : await createWallet(size);
 
-    await selectWallet(size, data["wallets"]);
     print("Carteira Selecionada: " + selectedWallet);
 
-    for (var y = 0; y < data["wallets"].length; y++) {
-      data["wallets"][y].forEach((key, value) {
+    for (var y = 0; y < await data["wallets"].length; y++) {
+      await data["wallets"][y].forEach((key, value) async {
         if (key == selectedWallet) {
-          for (var x = 0; x < data["wallets"][y][key].length; x++) {
-            if (data["wallets"][y][key][x]["ticker"].toString().toLowerCase() ==
+          for (var x = 0; x < await data["wallets"][y][key].length; x++) {
+            if (data["wallets"][y][key][x]["ticker"] ==
                 widget.dataStock["ticker"].toString().toLowerCase()) {
-              print(
-                  "Ticker igual: ${data["wallets"][y][key][x]["ticker"].toString().toLowerCase()}");
-              ScaffoldMessenger.of(context).removeCurrentSnackBar();
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text("Ação já existe em carteira"),
-                duration: Duration(seconds: 2),
-              ));
+              print("Ticker igual: ${data["wallets"][y][key][x]["ticker"]}");
+              showSnackBar("Ação já existe em carteira");
               setState(() {
                 notSearchMore = true;
               });
@@ -130,26 +248,26 @@ class _StockState extends State<Stock> {
     }
 
     if (!notSearchMore)
-      for (var y = 0; y < data["wallets"].length; y++) {
-        data["wallets"][y].forEach((key, value) {
+      for (var y = 0; y < await data["wallets"].length; y++) {
+        await data["wallets"][y].forEach((key, value) async {
           if (key == selectedWallet) {
-            /*print(data["wallets"][y][key]);
-          print(widget.dataStock["ticker"]);
-          });
-          print(data["wallets"][y][key]);*/
-            data["wallets"][y][key].add({
+            await data["wallets"][y][key].add({
               "ticker": widget.dataStock["ticker"].toString().toLowerCase()
             });
-            file.writeAsStringSync(jsonEncode(data));
-            ScaffoldMessenger.of(context).removeCurrentSnackBar();
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text("${widget.dataStock["ticker"]} adicionado em $key"),
-              duration: Duration(seconds: 2),
-            ));
+            file.writeAsStringSync(jsonEncode(await data));
+            showSnackBar("${widget.dataStock["ticker"]} adicionado em $key");
             return;
           }
         });
       }
+  }
+
+  showSnackBar(String text) {
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text("$text"),
+      duration: Duration(seconds: 2),
+    ));
   }
 
   @override
@@ -165,7 +283,18 @@ class _StockState extends State<Stock> {
               children: [
                 Divider(
                   color: Colors.transparent,
-                  height: size.height * 0.1,
+                  height: size.height * 0.05,
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: Colors.white,
+                          size: 38,
+                        ),
+                        onPressed: () => Navigator.pop(context)),
+                  ],
                 ),
                 Stack(
                   alignment: Alignment(0.8, -0.9),
@@ -227,7 +356,9 @@ class _StockState extends State<Stock> {
                   padding: EdgeInsets.all(16),
                   child: _text(
                       "Sobre A Empresa: ${widget.dataStock["info"]}", size),
-                ), /*
+                ),
+
+                /*
                 Text(
                   "D* = Oscilação",
                   style: TextStyle(color: Colors.white),

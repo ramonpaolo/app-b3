@@ -1,16 +1,14 @@
 //---- Packages
-import 'package:Ibovespa/src/nav.dart';
-import 'package:Ibovespa/src/views/home/Home.dart';
 import 'package:flutter/material.dart';
 import 'package:simple_splashscreen/simple_splashscreen.dart';
 
 //---- Screens
-import 'package:Ibovespa/src/auth/Login.dart';
+import 'package:Ibovespa/src/auth/login.page.dart';
 
 void main() {
   runApp(MaterialApp(
     title: "Ibovespa",
-    home: Nav(), // SplashScreen(),
+    home: SplashScreen(),
     theme: ThemeData(fontFamily: "Roboto"),
   ));
 }
@@ -35,8 +33,22 @@ class _SplashScreenState extends State<SplashScreen> {
 class Splash extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
     return Container(
-      color: Colors.white,
+      width: size.width,
+      height: size.height,
+      color: Colors.black,
+      child: Center(
+          child: ClipRRect(
+        borderRadius: BorderRadius.circular(40),
+        child: Image.asset(
+          "assets/logo.png",
+          filterQuality: FilterQuality.high,
+          fit: BoxFit.cover,
+          width: size.width * 0.6,
+          height: size.height * 0.3,
+        ),
+      )),
     );
   }
 }

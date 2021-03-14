@@ -1,7 +1,10 @@
-import 'package:Ibovespa/src/auth/Cadastro.dart';
-import 'package:Ibovespa/src/auth/ForgotPassword.dart';
-import 'package:Ibovespa/src/nav.dart';
+//---- packages
 import 'package:flutter/material.dart';
+
+//---- Screens
+import 'package:Ibovespa/src/auth/register.page.dart';
+import 'package:Ibovespa/src/auth/forgot_password.page.dart';
+import 'package:Ibovespa/src/nav.dart';
 
 class Login extends StatefulWidget {
   @override
@@ -46,7 +49,7 @@ class _LoginState extends State<Login> {
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => Cadastro()));
+                                    builder: (context) => Register()));
                           },
                         ))
                   ],
@@ -63,10 +66,8 @@ class _LoginState extends State<Login> {
                       color: Colors.black,
                     ),
                     false,
-                    _controllerEmail),
-                Divider(
-                  color: Colors.transparent,
-                ),
+                    _controllerEmail,
+                    "Digite seu email"),
                 _campForm(
                     size,
                     TextInputType.visiblePassword,
@@ -75,7 +76,8 @@ class _LoginState extends State<Login> {
                       color: Colors.black,
                     ),
                     _visiblePassword,
-                    _controllerPassword),
+                    _controllerPassword,
+                    "Digite a senha"),
                 TextButton(
                     child: Text(
                       "Esqueceu a senha?",
@@ -116,8 +118,9 @@ class _LoginState extends State<Login> {
   }
 
   Widget _campForm(Size size, TextInputType textType, Icon iconPrefix,
-      bool _password, TextEditingController _controller) {
+      bool _password, TextEditingController _controller, String hintText) {
     return Container(
+      margin: EdgeInsets.only(top: 10),
       width: size.width * 0.9,
       height: size.height * 0.06,
       decoration: BoxDecoration(
@@ -126,6 +129,8 @@ class _LoginState extends State<Login> {
         controller: _controller,
         obscureText: _password,
         decoration: InputDecoration(
+            contentPadding: EdgeInsets.only(top: size.height * 0.018),
+            hintText: hintText,
             prefixIcon: iconPrefix,
             border: InputBorder.none,
             suffixIcon: textType == TextInputType.visiblePassword
